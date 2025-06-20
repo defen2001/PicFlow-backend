@@ -1,7 +1,5 @@
 package com.defen.picflowbackend.exception;
 
-import org.springframework.validation.BindException;
-
 /**
  * 异常处理工具类
  */
