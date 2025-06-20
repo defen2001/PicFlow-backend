@@ -41,7 +41,7 @@ public class ApiResponse<T> implements Serializable {
      * @return 响应
      */
     public static <T> ApiResponse<T> success(T data) {
-        return new ApiResponse<>(200,  data, "成功");
+        return new ApiResponse<>(0,  data, "Success");
     }
 
     /**

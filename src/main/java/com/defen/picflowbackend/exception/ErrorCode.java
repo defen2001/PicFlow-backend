@@ -8,13 +8,13 @@ import lombok.Getter;
 @Getter
 public enum ErrorCode {
 
-    SUCCESS(200000, "Success"),
+    SUCCESS(0, "Success"),
     PARAM_ERROR(400001, "参数校验失败"),
-    NOT_LOGIN_ERROR(400002, "用户未登录"),
+    NOT_LOGIN_ERROR(401000, "用户未登录"),
     UNAUTHORIZED_ERROR(401001, "未授权访问"),
     NOT_FOUND_ERROR(404001, "资源不存在"),
     FORBIDDEN_ERROR(403000, "禁止访问"),
-
+    OPERATION_ERROR(403001, "操作失败"),
     SYSTEM_ERROR(500000, "系统内部错误"),
     DB_ERROR(500001, "数据库操作失败");
 
