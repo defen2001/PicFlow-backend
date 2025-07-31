@@ -2,7 +2,6 @@ package com.defen.picflowbackend.manager;
 
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.io.FileUtil;
-import cn.hutool.core.io.unit.DataUnit;
 import cn.hutool.core.util.NumberUtil;
 import cn.hutool.core.util.RandomUtil;
 import com.defen.picflowbackend.config.CosClientConfig;

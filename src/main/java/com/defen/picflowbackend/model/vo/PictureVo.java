@@ -1,10 +1,6 @@
 package com.defen.picflowbackend.model.vo;
 
 import cn.hutool.json.JSONUtil;
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.defen.picflowbackend.model.entity.Picture;
 import lombok.Data;
 import org.springframework.beans.BeanUtils;
