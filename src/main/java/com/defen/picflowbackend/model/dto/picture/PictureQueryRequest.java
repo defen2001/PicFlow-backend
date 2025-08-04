@@ -1,5 +1,6 @@
 package com.defen.picflowbackend.model.dto.picture;
 
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.defen.picflowbackend.common.PageRequest;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -7,6 +8,9 @@ import lombok.EqualsAndHashCode;
 import java.io.Serializable;
 import java.util.List;
 
+/**
+ * 图片查询请求
+ */
 @EqualsAndHashCode(callSuper = true)
 @Data
 public class PictureQueryRequest extends PageRequest implements Serializable {
@@ -70,6 +74,24 @@ public class PictureQueryRequest extends PageRequest implements Serializable {
      * 用户 id
      */
     private Long userId;
+
+    /**
+     * 审核状态：0-待审核; 1-通过; 2-拒绝
+     */
+    @TableField(value = "review_status")
+    private Integer reviewStatus;
+
+    /**
+     * 审核信息
+     */
+    @TableField(value = "review_message")
+    private String reviewMessage;
+
+    /**
+     * 审核人 ID
+     */
+    @TableField(value = "reviewer_id")
+    private Long reviewerId;
 
     private static final long serialVersionUID = 1L;
 }

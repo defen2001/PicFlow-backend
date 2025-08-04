@@ -3,6 +3,7 @@ package com.defen.picflowbackend.service;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.defen.picflowbackend.model.dto.picture.PictureQueryRequest;
+import com.defen.picflowbackend.model.dto.picture.PictureReviewRequest;
 import com.defen.picflowbackend.model.dto.picture.PictureUploadRequest;
 import com.defen.picflowbackend.model.entity.Picture;
 import com.baomidou.mybatisplus.extension.service.IService;
@@ -39,6 +40,7 @@ public interface PictureService extends IService<Picture> {
 
     /**
      * 获取单个图片封装
+     *
      * @param picture
      * @param request
      * @return
@@ -47,6 +49,7 @@ public interface PictureService extends IService<Picture> {
 
     /**
      * 分页获取图片封装
+     *
      * @param picturePage
      * @param request
      * @return
@@ -55,7 +58,24 @@ public interface PictureService extends IService<Picture> {
 
     /**
      * 校验图片
+     *
      * @param picture
      */
     void validPicture(Picture picture);
+
+    /**
+     * 图片审核
+     *
+     * @param pictureReviewRequest
+     * @param loginUser
+     */
+    void doPictureReview(PictureReviewRequest pictureReviewRequest, User loginUser);
+
+    /**
+     * 补充审核参数
+     *
+     * @param picture
+     * @param loginUser
+     */
+    void fillReviewParams(Picture picture, User loginUser);
 }

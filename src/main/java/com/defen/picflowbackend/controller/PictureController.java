@@ -12,6 +12,7 @@ import com.defen.picflowbackend.exception.ExceptionUtils;
 import com.defen.picflowbackend.model.dto.picture.*;
 import com.defen.picflowbackend.model.entity.Picture;
 import com.defen.picflowbackend.model.entity.User;
+import com.defen.picflowbackend.model.enums.PictureReviewStatusEnum;
 import com.defen.picflowbackend.model.vo.PictureVo;
 import com.defen.picflowbackend.service.PictureService;
 import com.defen.picflowbackend.service.UserService;
@@ -42,7 +43,7 @@ public class PictureController {
      * 上传图片（可重新上传）
      */
     @PostMapping("/upload")
-    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+//    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     public ApiResponse<PictureVo> uploadPicture(@RequestPart("file") MultipartFile multipartFile, PictureUploadRequest pictureUploadRequest, HttpServletRequest request) {
         User loginUser = userService.getCurrentUser(request);
         PictureVo pictureVo = pictureService.uploadPicture(multipartFile, pictureUploadRequest, loginUser);
@@ -77,7 +78,7 @@ public class PictureController {
      */
     @PostMapping("/update")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
-    public ApiResponse<Boolean> updatePicture(@RequestBody PictureUpdateRequest pictureUpdateRequest) {
+    public ApiResponse<Boolean> updatePicture(@RequestBody PictureUpdateRequest pictureUpdateRequest, HttpServletRequest request) {
         if (pictureUpdateRequest == null || pictureUpdateRequest.getId() <= 0) {
             throw new BusinessException(ErrorCode.PARAM_ERROR);
         }
@@ -92,6 +93,9 @@ public class PictureController {
         long id = pictureUpdateRequest.getId();
         Picture oldPicture = pictureService.getById(id);
         ExceptionUtils.throwIf(oldPicture == null, ErrorCode.NOT_FOUND_ERROR);
+        // 补充审核参数
+        User loginUser = userService.getCurrentUser(request);
+        pictureService.fillReviewParams(picture, loginUser);
         // 操作数据库
         boolean result = pictureService.updateById(picture);
         ExceptionUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
@@ -149,6 +153,8 @@ public class PictureController {
         long size = pictureQueryRequest.getPageSize();
         // 限制爬虫
         ExceptionUtils.throwIf(size > 20, ErrorCode.PARAM_ERROR);
+        // 普通用户默认只能查看已过审的数据
+        pictureQueryRequest.setReviewStatus(PictureReviewStatusEnum.PASS.getValue());
         // 查询数据库
         Page<Picture> picturePage = pictureService.page(new Page<>(current, size),
                 pictureService.getQueryWrapper(pictureQueryRequest));
@@ -182,6 +188,8 @@ public class PictureController {
         if (!oldPicture.getUserId().equals(loginUser.getId()) && !userService.isAdmin(loginUser)) {
             throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR);
         }
+        // 补充审核参数
+        pictureService.fillReviewParams(picture, loginUser);
         // 操作数据库
         boolean result = pictureService.updateById(picture);
         ExceptionUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
@@ -200,6 +208,19 @@ public class PictureController {
         pictureTagCategory.setTagList(tagList);
         pictureTagCategory.setCategoryList(categoryList);
         return ApiResponse.success(pictureTagCategory);
+    }
+
+    /**
+     * 审核图片
+     */
+    @PostMapping("/review")
+    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+    public ApiResponse<Boolean> doPictureReview(@RequestBody PictureReviewRequest pictureReviewRequest,
+                                                            HttpServletRequest request) {
+        ExceptionUtils.throwIf(pictureReviewRequest == null, ErrorCode.PARAM_ERROR);
+        User loginUser = userService.getCurrentUser(request);
+        pictureService.doPictureReview(pictureReviewRequest, loginUser);
+        return ApiResponse.success(true);
     }
 
 }
