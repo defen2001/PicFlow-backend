@@ -9,7 +9,9 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.defen.picflowbackend.exception.BusinessException;
 import com.defen.picflowbackend.exception.ErrorCode;
 import com.defen.picflowbackend.exception.ExceptionUtils;
-import com.defen.picflowbackend.manager.FIleManager;
+import com.defen.picflowbackend.manager.upload.FilePictureUpload;
+import com.defen.picflowbackend.manager.upload.PictureUploadTemplate;
+import com.defen.picflowbackend.manager.upload.UrlPictureUpload;
 import com.defen.picflowbackend.model.dto.file.UploadPictureResult;
 import com.defen.picflowbackend.model.dto.picture.PictureQueryRequest;
 import com.defen.picflowbackend.model.dto.picture.PictureReviewRequest;
@@ -24,7 +26,6 @@ import com.defen.picflowbackend.mapper.PictureMapper;
 import com.defen.picflowbackend.service.UserService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
@@ -46,10 +47,13 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
     private UserService userService;
 
     @Resource
-    private FIleManager fileManager;
+    private FilePictureUpload filePictureUpload;
+
+    @Resource
+    private UrlPictureUpload urlPictureUpload;
 
     @Override
-    public PictureVo uploadPicture(MultipartFile multipartFile, PictureUploadRequest pictureUploadRequest, User loginUser) {
+    public PictureVo uploadPicture(Object inputSource, PictureUploadRequest pictureUploadRequest, User loginUser) {
         ExceptionUtils.throwIf(loginUser == null, ErrorCode.NOT_LOGIN_ERROR);
         // 用于判断是新增还是更新图片
         Long pictureId = null;
@@ -68,7 +72,12 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         // 上传图片，得到信息
         // 按照用户 id 划分目录
         String uploadPathPrefix = String.format("public/%s", loginUser.getId());
-        UploadPictureResult uploadPictureResult = fileManager.uploadPicture(multipartFile, uploadPathPrefix);
+        // 根据 input Source 类型区分上传方式
+        PictureUploadTemplate pictureUploadTemplate = filePictureUpload;
+        if(inputSource instanceof String){
+            pictureUploadTemplate = urlPictureUpload;
+        }
+        UploadPictureResult uploadPictureResult = pictureUploadTemplate.uploadPicture(inputSource, uploadPathPrefix);
         // 构造要入库的图片信息
         Picture picture = new Picture();
         picture.setUrl(uploadPictureResult.getUrl());

@@ -40,13 +40,24 @@ public class PictureController {
 
 
     /**
-     * 上传图片（可重新上传）
+     * 通过本地上传图片（可重新上传）
      */
     @PostMapping("/upload")
 //    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     public ApiResponse<PictureVo> uploadPicture(@RequestPart("file") MultipartFile multipartFile, PictureUploadRequest pictureUploadRequest, HttpServletRequest request) {
         User loginUser = userService.getCurrentUser(request);
         PictureVo pictureVo = pictureService.uploadPicture(multipartFile, pictureUploadRequest, loginUser);
+        return ApiResponse.success(pictureVo);
+    }
+
+    /**
+     * 通过 URL 上传图片（可重新上传）
+     */
+    @PostMapping("/upload/url")
+    public ApiResponse<PictureVo> uploadPictureByUrl(@RequestBody PictureUploadRequest pictureUploadRequest, HttpServletRequest request) {
+        User loginUser = userService.getCurrentUser(request);
+        String fileUrl = pictureUploadRequest.getFileUrl();
+        PictureVo pictureVo = pictureService.uploadPicture(fileUrl, pictureUploadRequest, loginUser);
         return ApiResponse.success(pictureVo);
     }
 
@@ -198,6 +209,7 @@ public class PictureController {
 
     /**
      * 获取预置标签和分类
+     *
      * @return
      */
     @GetMapping("/tag_category")

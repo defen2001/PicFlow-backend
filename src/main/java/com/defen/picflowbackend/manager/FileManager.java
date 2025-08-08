@@ -22,9 +22,14 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
+/**
+ * 文件服务
+ * @deprecated 已废弃，改为使用 upload 包的模板方法优化
+ */
+@Deprecated
 @Slf4j
 @Service
-public class FIleManager {
+public class FileManager {
 
     @Resource
     private CosClientConfig cosClientConfig;

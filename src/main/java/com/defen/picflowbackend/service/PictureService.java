@@ -9,8 +9,6 @@ import com.defen.picflowbackend.model.entity.Picture;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.defen.picflowbackend.model.entity.User;
 import com.defen.picflowbackend.model.vo.PictureVo;
-import org.springframework.web.multipart.MultipartFile;
-
 import javax.servlet.http.HttpServletRequest;
 
 /**
@@ -23,12 +21,12 @@ public interface PictureService extends IService<Picture> {
     /**
      * 上传图片
      *
-     * @param multipartFile
+     * @param inputSource
      * @param pictureUploadRequest
      * @param loginUser
      * @return
      */
-    PictureVo uploadPicture(MultipartFile multipartFile, PictureUploadRequest pictureUploadRequest, User loginUser);
+    PictureVo uploadPicture(Object inputSource, PictureUploadRequest pictureUploadRequest, User loginUser);
 
     /**
      * 查询请求
