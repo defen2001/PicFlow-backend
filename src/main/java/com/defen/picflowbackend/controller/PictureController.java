@@ -235,4 +235,20 @@ public class PictureController {
         return ApiResponse.success(true);
     }
 
+    /**
+     * 批量抓取图片和创建图片
+     *
+     * @param pictureUploadByBatchRequest
+     * @param request
+     * @return
+     */
+    @PostMapping("/upload/batch")
+    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+    public ApiResponse<Integer> uploadPictureByBatch(@RequestBody PictureUploadByBatchRequest pictureUploadByBatchRequest,
+                                                HttpServletRequest request) {
+        ExceptionUtils.throwIf(pictureUploadByBatchRequest == null, ErrorCode.PARAM_ERROR);
+        User loginUser = userService.getCurrentUser(request);
+        Integer uploadCount = pictureService.uploadPictureByBatch(pictureUploadByBatchRequest, loginUser);
+        return ApiResponse.success(uploadCount);
+    }
 }
