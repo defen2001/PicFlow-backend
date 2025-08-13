@@ -49,11 +49,11 @@ public interface PictureService extends IService<Picture> {
     /**
      * 分页获取图片封装
      *
-     * @param picturePage
+     * @param pictureQueryRequest
      * @param request
      * @return
      */
-    Page<PictureVo> getPictureVoPage(Page<Picture> picturePage, HttpServletRequest request);
+    Page<PictureVo> getPictureVoPage(PictureQueryRequest pictureQueryRequest, HttpServletRequest request);
 
     /**
      * 校验图片
@@ -86,4 +86,11 @@ public interface PictureService extends IService<Picture> {
      * @return 成功创建图片数
      */
     Integer uploadPictureByBatch(PictureUploadByBatchRequest pictureUploadByBatchRequest, User loginUser);
+
+    /**
+     * 清理图片文件
+     *
+     * @param picture
+     */
+    void clearPictureFile(Picture picture);
 }

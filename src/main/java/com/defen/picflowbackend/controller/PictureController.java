@@ -12,7 +12,6 @@ import com.defen.picflowbackend.exception.ExceptionUtils;
 import com.defen.picflowbackend.model.dto.picture.*;
 import com.defen.picflowbackend.model.entity.Picture;
 import com.defen.picflowbackend.model.entity.User;
-import com.defen.picflowbackend.model.enums.PictureReviewStatusEnum;
 import com.defen.picflowbackend.model.vo.PictureVo;
 import com.defen.picflowbackend.service.PictureService;
 import com.defen.picflowbackend.service.UserService;
@@ -81,6 +80,8 @@ public class PictureController {
         // 操作数据库
         boolean result = pictureService.removeById(id);
         ExceptionUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
+        // 清理图片资源
+        pictureService.clearPictureFile(oldPicture);
         return ApiResponse.success(true);
     }
 
@@ -160,17 +161,12 @@ public class PictureController {
     @PostMapping("/list/page/vo")
     public ApiResponse<Page<PictureVo>> listPictureVOByPage(@RequestBody PictureQueryRequest pictureQueryRequest,
                                                              HttpServletRequest request) {
-        long current = pictureQueryRequest.getCurrent();
         long size = pictureQueryRequest.getPageSize();
         // 限制爬虫
         ExceptionUtils.throwIf(size > 20, ErrorCode.PARAM_ERROR);
-        // 普通用户默认只能查看已过审的数据
-        pictureQueryRequest.setReviewStatus(PictureReviewStatusEnum.PASS.getValue());
-        // 查询数据库
-        Page<Picture> picturePage = pictureService.page(new Page<>(current, size),
-                pictureService.getQueryWrapper(pictureQueryRequest));
+        Page<PictureVo> pictureVoPage = pictureService.getPictureVoPage(pictureQueryRequest, request);
         // 获取封装类
-        return ApiResponse.success(pictureService.getPictureVoPage(picturePage, request));
+        return ApiResponse.success(pictureVoPage);
     }
 
     /**

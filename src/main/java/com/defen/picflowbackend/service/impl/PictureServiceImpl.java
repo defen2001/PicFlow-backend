@@ -11,9 +11,12 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.defen.picflowbackend.exception.BusinessException;
 import com.defen.picflowbackend.exception.ErrorCode;
 import com.defen.picflowbackend.exception.ExceptionUtils;
+import com.defen.picflowbackend.manager.CacheManager;
+import com.defen.picflowbackend.manager.CosManager;
 import com.defen.picflowbackend.manager.upload.FilePictureUpload;
 import com.defen.picflowbackend.manager.upload.PictureUploadTemplate;
 import com.defen.picflowbackend.manager.upload.UrlPictureUpload;
+import com.defen.picflowbackend.mapper.PictureMapper;
 import com.defen.picflowbackend.model.dto.file.UploadPictureResult;
 import com.defen.picflowbackend.model.dto.picture.PictureQueryRequest;
 import com.defen.picflowbackend.model.dto.picture.PictureReviewRequest;
@@ -25,7 +28,6 @@ import com.defen.picflowbackend.model.enums.PictureReviewStatusEnum;
 import com.defen.picflowbackend.model.vo.PictureVo;
 import com.defen.picflowbackend.model.vo.UserVo;
 import com.defen.picflowbackend.service.PictureService;
-import com.defen.picflowbackend.mapper.PictureMapper;
 import com.defen.picflowbackend.service.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
@@ -34,14 +36,18 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.util.DigestUtils;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -61,6 +67,12 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
 
     @Resource
     private UrlPictureUpload urlPictureUpload;
+
+    @Resource
+    private CacheManager cacheManager;
+
+    @Resource
+    private CosManager cosManager;
 
     @Override
     public PictureVo uploadPicture(Object inputSource, PictureUploadRequest pictureUploadRequest, User loginUser) {
@@ -91,6 +103,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         // 构造要入库的图片信息
         Picture picture = new Picture();
         picture.setUrl(uploadPictureResult.getUrl());
+        picture.setThumbnailUrl(uploadPictureResult.getThumbnailUrl());
         // 支持外层传递图片名称
         String picName = uploadPictureResult.getPicName();
         if(StrUtil.isNotBlank(pictureUploadRequest.getPicName())){
@@ -111,6 +124,8 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
             picture.setEditTime(new Date());
         }
         boolean result = this.saveOrUpdate(picture);
+        //todo 更新需要清理图片资源
+//        this.clearPictureFile(oldPicture);
         ExceptionUtils.throwIf(!result, ErrorCode.OPERATION_ERROR, "图片上传失败");
         return PictureVo.objToVo(picture);
     }
@@ -177,6 +192,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
 
     /**
      * 获取单个图片封装
+     *
      * @param picture
      * @param request
      * @return
@@ -197,15 +213,45 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
 
     /**
      * 分页获取图片封装
-     * @param picturePage
+     *
+     * @param pictureQueryRequest
      * @param request
      * @return
      */
     @Override
-    public Page<PictureVo> getPictureVoPage(Page<Picture> picturePage, HttpServletRequest request) {
+    public Page<PictureVo> getPictureVoPage(PictureQueryRequest pictureQueryRequest, HttpServletRequest request) {
+        long current = pictureQueryRequest.getCurrent();
+        long size = pictureQueryRequest.getPageSize();
+        // 普通用户默认只能查看已过审的数据
+        pictureQueryRequest.setReviewStatus(PictureReviewStatusEnum.PASS.getValue());
+        // 构建缓存
+        String queryCondition = JSONUtil.toJsonStr(pictureQueryRequest);
+        String hashKey = DigestUtils.md5DigestAsHex(queryCondition.getBytes());
+        String redisKey = String.format("picFlow:listPictureVoByPage:%s", hashKey);
+        // 从本地中获取缓存
+        String localKey = String.format("listPictureVo:%s", hashKey);
+        String cacheValueLocal = cacheManager.getLocalCache(localKey);
+        if(cacheValueLocal != null){
+            // 如果缓存命中，返回结果
+            Page<PictureVo> cachePage = JSONUtil.toBean(cacheValueLocal, Page.class);
+            return cachePage;
+        }
+        // 从 redis 缓存中查询
+        String cachedValue = cacheManager.gerRedisCache(redisKey);
+        if(cachedValue != null){
+            // 缓存命中，从缓存中返回
+            Page<PictureVo> cachePage = JSONUtil.toBean(cachedValue, Page.class);
+            return cachePage;
+        }
+        // 查询数据库
+        Page<Picture> picturePage = this.page(new Page<>(current, size),
+                this.getQueryWrapper(pictureQueryRequest));
         List<Picture> pictureList = picturePage.getRecords();
         Page<PictureVo> pictureVoPage = new Page<>(picturePage.getCurrent(), picturePage.getSize(), picturePage.getTotal());
         if(CollUtil.isEmpty(pictureList)){
+            // 缓存空结果，设置较短过期时间 ( 防止缓存穿透）
+            String cacheValue = JSONUtil.toJsonStr(pictureVoPage);
+            cacheManager.setRedisCache(redisKey, cacheValue, 60, TimeUnit.SECONDS);
             return pictureVoPage;
         }
         // 对象列表 => 封装对象列表
@@ -223,6 +269,12 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
             pictureVo.setUser(userService.getUserVo(user));
         });
         pictureVoPage.setRecords(pictureVoList);
+        String cacheValue = JSONUtil.toJsonStr(pictureVoPage);
+        // 存入本地缓存
+        cacheManager.setLocalCache(localKey, cacheValue);
+        // 存入 Redis 缓存
+        // 使用随机过期时间
+        cacheManager.setRedisCacheWithRandom(redisKey, cacheValue);
         return pictureVoPage;
     }
 
@@ -370,6 +422,40 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
             }
         }
         return uploadCount;
+    }
+
+    /**
+     * 清理图片文件
+     *
+     * @param picture
+     */
+    @Override
+    public void clearPictureFile(Picture picture) {
+        // 判断图片是否被多条记录使用
+        String pictureUrl = picture.getUrl();
+        long count = this.lambdaQuery()
+                .eq(Picture::getUrl, pictureUrl)
+                .count();
+        // 有不止一条记录在使用，不清理
+        if(count > 1) {
+            return;
+        }
+        try {
+            // 提取路径部分
+            String picturePath = new URL(pictureUrl).getPath();
+            // 删除图片
+            cosManager.deleteObject(picturePath);
+            // 删除缩略图
+            String thumbnailUrl = picture.getThumbnailUrl();
+            if(StrUtil.isNotBlank(thumbnailUrl)){
+                String thumbnailPath = new URL(thumbnailUrl).getPath();
+                cosManager.deleteObject(thumbnailPath);
+            }
+
+        } catch (MalformedURLException e) {
+            log.error("图片删除时遇到格式错误的 URL。图片 URL: {}", pictureUrl, e);
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR,"格式错误的 URL");
+        }
     }
 }
 
