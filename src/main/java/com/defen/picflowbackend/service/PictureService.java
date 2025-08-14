@@ -2,10 +2,7 @@ package com.defen.picflowbackend.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.defen.picflowbackend.model.dto.picture.PictureQueryRequest;
-import com.defen.picflowbackend.model.dto.picture.PictureReviewRequest;
-import com.defen.picflowbackend.model.dto.picture.PictureUploadByBatchRequest;
-import com.defen.picflowbackend.model.dto.picture.PictureUploadRequest;
+import com.defen.picflowbackend.model.dto.picture.*;
 import com.defen.picflowbackend.model.entity.Picture;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.defen.picflowbackend.model.entity.User;
@@ -93,4 +90,28 @@ public interface PictureService extends IService<Picture> {
      * @param picture
      */
     void clearPictureFile(Picture picture);
+
+    /**
+     * 删除图片
+     *
+     * @param pictureId
+     * @param loginUser
+     */
+    void deletePicture(long pictureId, User loginUser);
+
+    /**
+     * 编辑图片
+     *
+     * @param pictureEditRequest
+     * @param loginUser
+     */
+    void editPicture(PictureEditRequest pictureEditRequest, User loginUser);
+
+    /**
+     * 校验空间图片权限
+     *
+     * @param picture
+     * @param loginUser
+     */
+    void checkPictureAuth(Picture picture, User loginUser);
 }
