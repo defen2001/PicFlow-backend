@@ -3,6 +3,8 @@ package com.defen.picflowbackend.controller;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.defen.picflowbackend.annotation.AuthCheck;
+import com.defen.picflowbackend.api.imagesearch.ImageSearchApiFacade;
+import com.defen.picflowbackend.api.imagesearch.model.ImageSearchResult;
 import com.defen.picflowbackend.common.ApiResponse;
 import com.defen.picflowbackend.common.DeleteRequest;
 import com.defen.picflowbackend.constant.UserConstant;
@@ -272,5 +274,20 @@ public class PictureController {
         User loginUser = userService.getCurrentUser(request);
         Integer uploadCount = pictureService.uploadPictureByBatch(pictureUploadByBatchRequest, loginUser);
         return ApiResponse.success(uploadCount);
+    }
+
+    /**
+     * 以图搜图
+     */
+    @PostMapping("/search/picture")
+    public ApiResponse<List<ImageSearchResult>> searchPictureByPicture(@RequestBody SearchPictureByPictureRequest searchPictureByPictureRequest) {
+        ExceptionUtils.throwIf(searchPictureByPictureRequest == null, ErrorCode.PARAM_ERROR);
+        Long pictureId = searchPictureByPictureRequest.getPictureId();
+        ExceptionUtils.throwIf(pictureId == null || pictureId <= 0, ErrorCode.NOT_FOUND_ERROR);
+        Picture picture = pictureService.getById(pictureId);
+        ExceptionUtils.throwIf(picture == null, ErrorCode.NOT_FOUND_ERROR);
+        String pictureUrl = picture.getThumbnailUrl();
+        List<ImageSearchResult> resultList = ImageSearchApiFacade.searchImage(pictureUrl);
+        return ApiResponse.success(resultList);
     }
 }
