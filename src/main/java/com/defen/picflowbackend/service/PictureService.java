@@ -53,6 +53,15 @@ public interface PictureService extends IService<Picture> {
     Page<PictureVo> getPictureVoPage(PictureQueryRequest pictureQueryRequest, HttpServletRequest request);
 
     /**
+     * 分页获取图片封装（缓存）
+     *
+     * @param pictureQueryRequest
+     * @param request
+     * @return
+     */
+    Page<PictureVo> getPictureVoCachePage(PictureQueryRequest pictureQueryRequest, HttpServletRequest request);
+
+    /**
      * 校验图片
      *
      * @param picture

@@ -161,7 +161,7 @@ public class PictureController {
      */
     @PostMapping("/list/page/vo")
     public ApiResponse<Page<PictureVo>> listPictureVOByPage(@RequestBody PictureQueryRequest pictureQueryRequest,
-                                                             HttpServletRequest request) {
+                                                            HttpServletRequest request) {
         long size = pictureQueryRequest.getPageSize();
         // 限制爬虫
         ExceptionUtils.throwIf(size > 20, ErrorCode.PARAM_ERROR);
@@ -182,6 +182,36 @@ public class PictureController {
             }
         }
         Page<PictureVo> pictureVoPage = pictureService.getPictureVoPage(pictureQueryRequest, request);
+        // 获取封装类
+        return ApiResponse.success(pictureVoPage);
+    }
+
+    /**
+     * 分页获取图片列表有缓存（封装类）
+     */
+    @PostMapping("/list/page/vo/cache")
+    public ApiResponse<Page<PictureVo>> listPictureVOCacheByPage(@RequestBody PictureQueryRequest pictureQueryRequest,
+                                                             HttpServletRequest request) {
+        long size = pictureQueryRequest.getPageSize();
+        // 限制爬虫
+        ExceptionUtils.throwIf(size > 20, ErrorCode.PARAM_ERROR);
+        // 空间存储校验
+        Long spaceId = pictureQueryRequest.getSpaceId();
+        if (spaceId == null) {
+            // 公开图库
+            // 普通用户默认只能看到审核通过的数据
+            pictureQueryRequest.setReviewStatus(PictureReviewStatusEnum.PASS.getValue());
+            pictureQueryRequest.setNullSpaceId(true);
+        } else {
+            // 私有空间
+            User loginUser = userService.getCurrentUser(request);
+            Space space = spaceService.getById(spaceId);
+            ExceptionUtils.throwIf(space == null, ErrorCode.NOT_FOUND_ERROR, "空间不存咋");
+            if (!loginUser.getId().equals(space.getUserId())) {
+                throw new BusinessException(ErrorCode.UNAUTHORIZED_ERROR, "没有空间权限");
+            }
+        }
+        Page<PictureVo> pictureVoPage = pictureService.getPictureVoCachePage(pictureQueryRequest, request);
         // 获取封装类
         return ApiResponse.success(pictureVoPage);
     }

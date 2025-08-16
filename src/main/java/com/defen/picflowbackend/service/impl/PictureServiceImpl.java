@@ -285,8 +285,43 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
     public Page<PictureVo> getPictureVoPage(PictureQueryRequest pictureQueryRequest, HttpServletRequest request) {
         long current = pictureQueryRequest.getCurrent();
         long size = pictureQueryRequest.getPageSize();
-        // 普通用户默认只能查看已过审的数据
-        pictureQueryRequest.setReviewStatus(PictureReviewStatusEnum.PASS.getValue());
+        // 查询数据库
+        Page<Picture> picturePage = this.page(new Page<>(current, size),
+                this.getQueryWrapper(pictureQueryRequest));
+        List<Picture> pictureList = picturePage.getRecords();
+        Page<PictureVo> pictureVoPage = new Page<>(picturePage.getCurrent(), picturePage.getSize(), picturePage.getTotal());
+        if(CollUtil.isEmpty(pictureList)){
+            return pictureVoPage;
+        }
+        // 对象列表 => 封装对象列表
+        List<PictureVo> pictureVoList = pictureList.stream().map(PictureVo::objToVo).collect(Collectors.toList());
+        // 1. 关联查询用户信息
+        Set<Long> userIdSet = pictureList.stream().map(Picture::getUserId).collect(Collectors.toSet());
+        Map<Long, List<User>> userIdUserListMap = userService.listByIds(userIdSet).stream().collect(Collectors.groupingBy(User::getId));
+        // 2. 填充信息
+        pictureVoList.forEach(pictureVo -> {
+            Long userId = pictureVo.getUserId();
+            User user = null;
+            if(userIdUserListMap.containsKey(userId)){
+                user = userIdUserListMap.get(userId).get(0);
+            }
+            pictureVo.setUser(userService.getUserVo(user));
+        });
+        pictureVoPage.setRecords(pictureVoList);
+        return pictureVoPage;
+    }
+
+    /**
+     * 分页获取图片封装 （有缓存）
+     *
+     * @param pictureQueryRequest
+     * @param request
+     * @return
+     */
+    @Override
+    public Page<PictureVo> getPictureVoCachePage(PictureQueryRequest pictureQueryRequest, HttpServletRequest request) {
+        long current = pictureQueryRequest.getCurrent();
+        long size = pictureQueryRequest.getPageSize();
         // 构建缓存
         String queryCondition = JSONUtil.toJsonStr(pictureQueryRequest);
         String hashKey = DigestUtils.md5DigestAsHex(queryCondition.getBytes());
