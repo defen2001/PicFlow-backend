@@ -290,4 +290,15 @@ public class PictureController {
         List<ImageSearchResult> resultList = ImageSearchApiFacade.searchImage(pictureUrl);
         return ApiResponse.success(resultList);
     }
+
+    /**
+     * 批量更新
+     */
+    @PostMapping("/edit/batch")
+    public ApiResponse<Boolean> editPictureByBatch(@RequestBody PictureEditByBatchRequest pictureEditByBatchRequest, HttpServletRequest request) {
+        ExceptionUtils.throwIf(pictureEditByBatchRequest == null, ErrorCode.PARAM_ERROR);
+        User loginUser = userService.getCurrentUser(request);
+        pictureService.editPictureByBatch(pictureEditByBatchRequest, loginUser);
+        return ApiResponse.success(true);
+    }
 }

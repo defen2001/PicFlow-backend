@@ -123,4 +123,12 @@ public interface PictureService extends IService<Picture> {
      * @param loginUser
      */
     void checkPictureAuth(Picture picture, User loginUser);
+
+    /**
+     * 批量修改图片信息
+     *
+     * @param pictureEditByBatchRequest
+     * @param loginUser
+     */
+    void editPictureByBatch(PictureEditByBatchRequest pictureEditByBatchRequest, User loginUser);
 }
