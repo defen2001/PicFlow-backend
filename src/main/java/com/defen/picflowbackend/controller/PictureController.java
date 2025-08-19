@@ -1,8 +1,12 @@
 package com.defen.picflowbackend.controller;
 
+import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.defen.picflowbackend.annotation.AuthCheck;
+import com.defen.picflowbackend.api.aliyunai.AliYunAiApi;
+import com.defen.picflowbackend.api.aliyunai.model.CreateOutPaintingTaskResponse;
+import com.defen.picflowbackend.api.aliyunai.model.GetOutPaintingTaskResponse;
 import com.defen.picflowbackend.api.imagesearch.ImageSearchApiFacade;
 import com.defen.picflowbackend.api.imagesearch.model.ImageSearchResult;
 import com.defen.picflowbackend.common.ApiResponse;
@@ -43,6 +47,9 @@ public class PictureController {
 
     @Resource
     private SpaceService spaceService;
+
+    @Resource
+    private AliYunAiApi aliYunAiApi;
 
 
     /**
@@ -300,5 +307,30 @@ public class PictureController {
         User loginUser = userService.getCurrentUser(request);
         pictureService.editPictureByBatch(pictureEditByBatchRequest, loginUser);
         return ApiResponse.success(true);
+    }
+
+    /**
+     * 创建 AI 扩图任务
+     */
+    @PostMapping("/out_painting/create_task")
+    public ApiResponse<CreateOutPaintingTaskResponse> createPictureOutPaintingTask(
+            @RequestBody CreatePictureOutPaintingTaskRequest createPictureOutPaintingTaskRequest,
+            HttpServletRequest request) {
+        if (createPictureOutPaintingTaskRequest == null || createPictureOutPaintingTaskRequest.getPictureId() == null) {
+            throw new BusinessException(ErrorCode.PARAM_ERROR);
+        }
+        User loginUser = userService.getCurrentUser(request);
+        CreateOutPaintingTaskResponse response = pictureService.createPictureOutPaintingTask(createPictureOutPaintingTaskRequest, loginUser);
+        return ApiResponse.success(response);
+    }
+
+    /**
+     * 查询 AI 扩图任务
+     */
+    @GetMapping("/out_painting/get_task")
+    public ApiResponse<GetOutPaintingTaskResponse> getPictureOutPaintingTask(String taskId) {
+        ExceptionUtils.throwIf(StrUtil.isBlank(taskId), ErrorCode.PARAM_ERROR);
+        GetOutPaintingTaskResponse task = aliYunAiApi.getOutPaintingTask(taskId);
+        return ApiResponse.success(task);
     }
 }

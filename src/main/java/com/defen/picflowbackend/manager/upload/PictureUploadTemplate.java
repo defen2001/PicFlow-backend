@@ -95,10 +95,10 @@ public abstract class PictureUploadTemplate {
     /**
      * 封装汉辉返回结果集
      *
-     * @param originalFilename
-     * @param file
-     * @param uploadPath
-     * @param imageInfo
+     * @param originalFilename 原始文件名
+     * @param file 上传文件
+     * @param uploadPath 上传路径
+     * @param imageInfo 图片信息
      * @return
      */
     private  UploadPictureResult buildResult(String originalFilename, File file, String uploadPath, ImageInfo imageInfo){
@@ -119,8 +119,9 @@ public abstract class PictureUploadTemplate {
     /**
      * 封装压缩的结果集
      *
-     * @param originFilename
-     * @param compressedCiObject
+     * @param originFilename 原始文件名
+     * @param compressedCiObject 压缩后的对象
+     * @param thumbnailCiObject 缩略图对象
      * @return
      */
     private UploadPictureResult buildResult(String originFilename, CIObject compressedCiObject, CIObject thumbnailCiObject) {

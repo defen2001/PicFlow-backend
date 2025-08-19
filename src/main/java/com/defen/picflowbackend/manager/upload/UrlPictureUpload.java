@@ -1,6 +1,5 @@
 package com.defen.picflowbackend.manager.upload;
 
-import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.http.HttpResponse;
 import cn.hutool.http.HttpStatus;
@@ -80,7 +79,11 @@ public class UrlPictureUpload extends PictureUploadTemplate {
     @Override
     protected String getOriginFilename(Object inputSource) {
         String fileUrl = (String) inputSource;
-        return FileUtil.getName(fileUrl);
+        // 去掉 URL 中的查询参数部分，保留文件名
+        if (fileUrl.contains("?")) {
+            fileUrl = fileUrl.substring(0, fileUrl.indexOf("?"));
+        }
+        return fileUrl;
     }
 
     @Override
