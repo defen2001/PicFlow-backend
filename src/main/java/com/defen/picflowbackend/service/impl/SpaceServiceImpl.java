@@ -16,6 +16,7 @@ import com.defen.picflowbackend.model.dto.space.SpaceQueryRequest;
 import com.defen.picflowbackend.model.entity.Space;
 import com.defen.picflowbackend.model.entity.User;
 import com.defen.picflowbackend.model.enums.SpaceLevelEnum;
+import com.defen.picflowbackend.model.enums.SpaceTypeEnum;
 import com.defen.picflowbackend.model.vo.SpaceVo;
 import com.defen.picflowbackend.model.vo.UserVo;
 import com.defen.picflowbackend.service.SpaceService;
@@ -58,6 +59,8 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
         String spaceName = space.getSpaceName();
         Integer spaceLevel = space.getSpaceLevel();
         SpaceLevelEnum spaceLevelEnum = SpaceLevelEnum.getEnumByValue(spaceLevel);
+        Integer spaceType = space.getSpaceType();
+        SpaceTypeEnum spaceTypeEnum = SpaceTypeEnum.getEnumByValue(spaceType);
         // 要创建
         if (add) {
             if (StrUtil.isBlank(spaceName)) {
@@ -66,6 +69,9 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
             if (spaceLevel == null) {
                 throw new BusinessException(ErrorCode.PARAM_ERROR, "空间级别不能为空");
             }
+            if (spaceType == null) {
+                throw new BusinessException(ErrorCode.PARAM_ERROR, "空间类型不能为空");
+            }
         }
         // 修改数据时，如果要改空间级别
         if (spaceLevel != null && spaceLevelEnum == null) {
@@ -73,6 +79,9 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
         }
         if (StrUtil.isNotBlank(spaceName) && spaceName.length() > 30) {
             throw new BusinessException(ErrorCode.PARAM_ERROR, "空间名称过长");
+        }
+        if (spaceType != null && spaceTypeEnum == null) {
+            throw  new BusinessException(ErrorCode.PARAM_ERROR, "空间类型不存在");
         }
     }
 
@@ -150,6 +159,7 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
         Long userId = spaceQueryRequest.getUserId();
         String spaceName = spaceQueryRequest.getSpaceName();
         Integer spaceLevel = spaceQueryRequest.getSpaceLevel();
+        Integer spaceType = spaceQueryRequest.getSpaceType();
         String sortField = spaceQueryRequest.getSortField();
         String sortOrder = spaceQueryRequest.getSortOrder();
         // 拼接查询条件
@@ -157,6 +167,7 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
         queryWrapper.eq(ObjUtil.isNotEmpty(userId), "user_id", userId);
         queryWrapper.like(StrUtil.isNotEmpty(spaceName), "space_name", spaceName);
         queryWrapper.eq(ObjUtil.isNotEmpty(spaceLevel), "space_level", spaceLevel);
+        queryWrapper.eq(ObjUtil.isNotEmpty(spaceType), "space_type", spaceType);
         // 排序
         queryWrapper.orderBy(StrUtil.isNotEmpty(sortField), sortOrder.equals("ascend"), sortField);
         return queryWrapper;
@@ -210,6 +221,9 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
         if (spaceAddRequest.getSpaceLevel() == null) {
             space.setSpaceLevel(SpaceLevelEnum.COMMON.getValue());
         }
+        if (spaceAddRequest.getSpaceType() == null) {
+            space.setSpaceType(SpaceTypeEnum.PRIVATE.getValue());
+        }
         // 填充数据
         this.fillSpaceBySpaceLevel(space);
         // 2. 数据校验
@@ -225,12 +239,14 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
         synchronized (lock) {
             Long newSpaceId = transactionTemplate.execute(status -> {
                 // 判断是否已有空间
-                boolean exists = this.lambdaQuery().eq(Space::getUserId, userId).exists();
-                ExceptionUtils.throwIf(exists, ErrorCode.OPERATION_ERROR, "每个用户仅能有一个私有空间");
+                boolean exists = this.lambdaQuery()
+                        .eq(Space::getUserId, userId)
+                        .eq(Space::getSpaceType, spaceAddRequest.getSpaceType())
+                        .exists();
+                ExceptionUtils.throwIf(exists, ErrorCode.OPERATION_ERROR, "每个用户每类空间仅能创建一个");
                 // 写入数据库
                 boolean result = this.save(space);
                 ExceptionUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
-                // todo 做一个异常测试，看是否回滚
                 // 返回新写入的数据 id
                 return space.getId();
             });
