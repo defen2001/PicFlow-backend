@@ -31,7 +31,6 @@ public interface SpaceService extends IService<Space> {
      * 获取空间包装类
      *
      * @param space
-     * @param request
      * @return
      */
     SpaceVo getSpaceVo(Space space, HttpServletRequest request);

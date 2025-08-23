@@ -14,12 +14,15 @@ import com.defen.picflowbackend.model.dto.space.SpaceAddRequest;
 import com.defen.picflowbackend.model.dto.space.SpaceEditRequest;
 import com.defen.picflowbackend.model.dto.space.SpaceQueryRequest;
 import com.defen.picflowbackend.model.entity.Space;
+import com.defen.picflowbackend.model.entity.SpaceUser;
 import com.defen.picflowbackend.model.entity.User;
 import com.defen.picflowbackend.model.enums.SpaceLevelEnum;
+import com.defen.picflowbackend.model.enums.SpaceRoleEnum;
 import com.defen.picflowbackend.model.enums.SpaceTypeEnum;
 import com.defen.picflowbackend.model.vo.SpaceVo;
 import com.defen.picflowbackend.model.vo.UserVo;
 import com.defen.picflowbackend.service.SpaceService;
+import com.defen.picflowbackend.service.SpaceUserService;
 import com.defen.picflowbackend.service.UserService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
@@ -41,6 +44,9 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
 
     @Resource
     private UserService userService;
+
+    @Resource
+    private SpaceUserService spaceUserService;
 
     @Resource
     private TransactionTemplate transactionTemplate;
@@ -89,7 +95,6 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
      * 获取空间包装类
      *
      * @param space
-     * @param request
      * @return
      */
     @Override
@@ -247,6 +252,15 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
                 // 写入数据库
                 boolean result = this.save(space);
                 ExceptionUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
+                // 如果是团队空间，关联新增团队成员记录
+                if (SpaceTypeEnum.TEAM.getValue() == spaceAddRequest.getSpaceType()) {
+                    SpaceUser spaceUser = new SpaceUser();
+                    spaceUser.setSpaceId(space.getId());
+                    spaceUser.setUserId(userId);
+                    spaceUser.setSpaceRole(SpaceRoleEnum.ADMIN.getValue());
+                    result = spaceUserService.save(spaceUser);
+                    ExceptionUtils.throwIf(!result, ErrorCode.OPERATION_ERROR, "创建团队成员记录失败");
+                }
                 // 返回新写入的数据 id
                 return space.getId();
             });
