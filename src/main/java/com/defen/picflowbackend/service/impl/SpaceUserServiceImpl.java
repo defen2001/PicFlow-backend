@@ -22,6 +22,7 @@ import com.defen.picflowbackend.service.SpaceService;
 import com.defen.picflowbackend.service.SpaceUserService;
 import com.defen.picflowbackend.service.UserService;
 import org.springframework.beans.BeanUtils;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -45,6 +46,7 @@ public class SpaceUserServiceImpl extends ServiceImpl<SpaceUserMapper, SpaceUser
     private UserService userService;
 
     @Resource
+    @Lazy
     private SpaceService spaceService;
 
     /**
@@ -185,7 +187,6 @@ public class SpaceUserServiceImpl extends ServiceImpl<SpaceUserMapper, SpaceUser
         SpaceUser spaceUser = new SpaceUser();
         BeanUtils.copyProperties(spaceUserAddRequest, spaceUser);
         validSpaceUser(spaceUser, true);
-        ;
         // 数据库操作
         boolean result = this.save(spaceUser);
         ExceptionUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);

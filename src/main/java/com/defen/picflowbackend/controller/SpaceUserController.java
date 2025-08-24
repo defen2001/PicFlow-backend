@@ -6,6 +6,8 @@ import com.defen.picflowbackend.common.DeleteRequest;
 import com.defen.picflowbackend.exception.BusinessException;
 import com.defen.picflowbackend.exception.ErrorCode;
 import com.defen.picflowbackend.exception.ExceptionUtils;
+import com.defen.picflowbackend.manager.auth.annotation.SaSpaceCheckPermission;
+import com.defen.picflowbackend.manager.auth.model.SpaceUserPermissionConstant;
 import com.defen.picflowbackend.model.dto.spaceuser.SpaceUserAddRequest;
 import com.defen.picflowbackend.model.dto.spaceuser.SpaceUserEditRequest;
 import com.defen.picflowbackend.model.dto.spaceuser.SpaceUserQueryRequest;
@@ -40,6 +42,7 @@ public class SpaceUserController {
      * 添加成员到空间
      */
     @PostMapping("/add")
+    @SaSpaceCheckPermission(value = SpaceUserPermissionConstant.SPACE_USER_MANAGE)
     public ApiResponse<Long> addSpaceUser(@RequestBody SpaceUserAddRequest spaceUserAddRequest, HttpServletRequest request) {
         ExceptionUtils.throwIf(spaceUserAddRequest == null, ErrorCode.PARAM_ERROR);
         long id = spaceUserService.addSpaceUser(spaceUserAddRequest);
@@ -50,6 +53,7 @@ public class SpaceUserController {
      * 从空间移除成员
      */
     @PostMapping("/delete")
+    @SaSpaceCheckPermission(value = SpaceUserPermissionConstant.SPACE_USER_MANAGE)
     public ApiResponse<Boolean> deleteSpaceUser(@RequestBody DeleteRequest deleteRequest,
                                                 HttpServletRequest request) {
         if (deleteRequest == null || deleteRequest.getId() <= 0) {
@@ -69,6 +73,7 @@ public class SpaceUserController {
      * 查询某个成员在某个空间的信息
      */
     @PostMapping("/get")
+    @SaSpaceCheckPermission(value = SpaceUserPermissionConstant.SPACE_USER_MANAGE)
     public ApiResponse<SpaceUser> getSpaceUser(@RequestBody SpaceUserQueryRequest spaceUserQueryRequest) {
         // 参数校验
         ExceptionUtils.throwIf(spaceUserQueryRequest == null, ErrorCode.PARAM_ERROR);
@@ -85,6 +90,7 @@ public class SpaceUserController {
      * 查询成员信息列表
      */
     @PostMapping("/list")
+    @SaSpaceCheckPermission(value = SpaceUserPermissionConstant.SPACE_USER_MANAGE)
     public ApiResponse<List<SpaceUserVo>> listSpaceUser(@RequestBody SpaceUserQueryRequest spaceUserQueryRequest,
                                                         HttpServletRequest request) {
         ExceptionUtils.throwIf(spaceUserQueryRequest == null, ErrorCode.PARAM_ERROR);
@@ -98,6 +104,7 @@ public class SpaceUserController {
      * 编辑成员信息（设置权限）
      */
     @PostMapping("/edit")
+    @SaSpaceCheckPermission(value = SpaceUserPermissionConstant.SPACE_USER_MANAGE)
     public ApiResponse<Boolean> editSpaceUser(@RequestBody SpaceUserEditRequest spaceUserEditRequest,
                                               HttpServletRequest request) {
         if (spaceUserEditRequest == null || spaceUserEditRequest.getId() <= 0) {

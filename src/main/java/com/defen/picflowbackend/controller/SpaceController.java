@@ -8,6 +8,7 @@ import com.defen.picflowbackend.constant.UserConstant;
 import com.defen.picflowbackend.exception.BusinessException;
 import com.defen.picflowbackend.exception.ErrorCode;
 import com.defen.picflowbackend.exception.ExceptionUtils;
+import com.defen.picflowbackend.manager.auth.SpaceUserAuthManager;
 import com.defen.picflowbackend.model.dto.space.*;
 import com.defen.picflowbackend.model.entity.Space;
 import com.defen.picflowbackend.model.entity.User;
@@ -35,6 +36,9 @@ public class SpaceController {
 
     @Resource
     private SpaceService spaceService;
+
+    @Resource
+    private SpaceUserAuthManager spaceUserAuthManager;
 
     /**
      * 创建空间
@@ -117,8 +121,12 @@ public class SpaceController {
         // 查询数据库
         Space space = spaceService.getById(id);
         ExceptionUtils.throwIf(space == null, ErrorCode.NOT_FOUND_ERROR);
+        SpaceVo spaceVo = spaceService.getSpaceVo(space, request);
+        User loginUser = userService.getCurrentUser(request);
+        List<String> permissionList = spaceUserAuthManager.getPermissionList(space, loginUser);
+        spaceVo.setPermissionList(permissionList);
         // 获取封装类
-        return ApiResponse.success(spaceService.getSpaceVo(space, request));
+        return ApiResponse.success(spaceVo);
     }
 
     /**

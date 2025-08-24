@@ -6,7 +6,7 @@ import java.io.Serializable;
 import java.util.Date;
 
 @Data
-public class LoginUserVO implements Serializable {
+public class    LoginUserVO implements Serializable {
 
     /**
      * 用户 id

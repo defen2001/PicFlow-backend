@@ -8,6 +8,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.defen.picflowbackend.constant.UserConstant;
 import com.defen.picflowbackend.exception.BusinessException;
 import com.defen.picflowbackend.exception.ErrorCode;
+import com.defen.picflowbackend.manager.auth.StpKit;
 import com.defen.picflowbackend.mapper.UserMapper;
 import com.defen.picflowbackend.model.dto.user.UserLoginRequest;
 import com.defen.picflowbackend.model.dto.user.UserQueryRequest;
@@ -121,7 +122,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 //        session.setAttribute("userAccount", user.getUserAccount());
 //        session.setAttribute("userId", user.getId());
 //        session.setAttribute("userRole", user.getUserRole());
+        // 3.记录用户登录态
         request.getSession().setAttribute(UserConstant.USER_LOGIN_STATE , user);
+        // 4.记录用户态到 Sa- token，便于空间鉴权时使用，注意保证该用户信息与 SpringSession 中信息过期时间一致
+        StpKit.SPACE.login(user.getId());
+        StpKit.SPACE.getSession().set(UserConstant.USER_LOGIN_STATE, user);
         return this.getUserVo(user);
     }
 

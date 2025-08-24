@@ -104,6 +104,11 @@ public class PictureVo implements Serializable {
     private UserVo user;
 
     /**
+     * 权限列表
+     */
+    private List<String> permissionList = new ArrayList<>();
+
+    /**
      * 封装类转对象
      */
     public static Picture voToObj(PictureVo pictureVo) {
