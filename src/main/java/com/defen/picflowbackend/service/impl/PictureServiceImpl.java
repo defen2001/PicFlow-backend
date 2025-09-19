@@ -164,6 +164,8 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         picture.setPicHeight(uploadPictureResult.getPicHeight());
         picture.setPicScale(uploadPictureResult.getPicScale());
         picture.setPicFormat(uploadPictureResult.getPicFormat());
+        picture.setTags(pictureUploadRequest.getTags());
+        picture.setCategory(pictureUploadRequest.getCategory());
         picture.setUserId(loginUser.getId());
         // 补充审核参数
         this.fillReviewParams(picture, loginUser);
@@ -519,6 +521,9 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
             if(StrUtil.isNotBlank(namePrefix)){
                 pictureUploadRequest.setPicName(namePrefix + (uploadCount + 1));
             }
+            pictureUploadRequest.setFileUrl(fileUrl);
+            pictureUploadRequest.setCategory(pictureUploadByBatchRequest.getCategory());
+            pictureUploadRequest.setTags(JSONUtil.toJsonStr(pictureUploadByBatchRequest.getTags()));
             try{
                 PictureVo pictureVo = this.uploadPicture(fileUrl, pictureUploadRequest, loginUser);
                 log.info("图片上传成功,id={}", pictureVo.getId());
