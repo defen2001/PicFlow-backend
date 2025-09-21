@@ -166,6 +166,15 @@ public class PictureController {
         // 获取权限列表
         User loginUser = userService.getCurrentUser(request);
         List<String> permissionList = spaceUserAuthManager.getPermissionList(space, loginUser);
+        // 公共空间本人图片的操作权限
+        if (space == null && picture.getUserId().equals(loginUser.getId())) {
+            permissionList = Arrays.asList(
+                    "picture:view",
+                    "picture:upload",
+                    "picture:edit",
+                    "picture:delete"
+            );
+        }
         PictureVo pictureVo = pictureService.getPictureVo(picture, request);
         pictureVo.setPermissionList(permissionList);
         // 获取封装类
